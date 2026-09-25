@@ -59,6 +59,21 @@ app.get('/api/pair/status/:sessionId', async (req, res) => {
     }
 });
 
+// Bot runtime asks this on every boot to know which sessions to resume.
+app.get('/internal/sessions/active', requireInternal, async (req, res) => {
+    try {
+        const docs = await AuthKey.find({ key: 'creds' }).lean();
+
+        const sessionIds = docs
+            .filter(d => d.value && d.value.registered === true)
+            .map(d => d.sessionId);
+
+        res.json({ sessionIds });
+    } catch (err) {
+        res.status(500).json({ error: 'Unable to list active sessions.' });
+    }
+});
+
 // Runtime -> PairBackend heartbeat/status.
 app.post('/internal/runtime/status', requireInternal, async (req, res) => {
     try {
